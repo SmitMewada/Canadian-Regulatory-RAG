@@ -1,0 +1,29 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+
+# Data (raw docs are large)
+data/raw/
+data/processed/
+
+# Eval results (CI uploads these)
+eval/results/
+
+# Notebooks checkpoints
+notebooks/.ipynb_checkpoints/
+
+# Mac
+.DS_Store
+
+# Docker volumes
+postgres_data/
+langfuse_data/
