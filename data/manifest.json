@@ -1,0 +1,65 @@
+{
+  "osfi_e23": {
+    "id": "osfi_e23",
+    "title": "Guideline E-23 Model Risk Management 2027",
+    "source_url": "https://www.osfi-bsif.gc.ca/en/guidance/guidance-library/guideline-e-23-model-risk-management-2027",
+    "file_path": "data/raw/Guideline E23  Model Risk Management 2027.pdf",
+    "sha256_hash": "e07f9ea71626805e257fc72e76b70530529a25b7320baa38c80e94d593c1b231",
+    "date_accessed": "2026-04-14 20:32:32.312537",
+    "total_pages": 21
+  },
+  "osfi_e23_letter": {
+    "id": "osfi_e23_letter",
+    "title": "Guideline E-23 Model Risk Management 2027 Letter",
+    "source_url": "https://www.osfi-bsif.gc.ca/en/guidance/guidance-library/guideline-e-23-model-risk-management-2027-letter",
+    "file_path": "data/raw/Guideline E23  Model Risk Management 2027  Letter.pdf",
+    "sha256_hash": "a0467d6d1eeb56bb0cab64c1b743ae88351192e6d76a1b6b1e3d18d51151c22c",
+    "date_accessed": "2026-04-14 20:32:32.314471",
+    "total_pages": 9
+  },
+  "tb_adm": {
+    "id": "tb_adm",
+    "title": "Directive on Automated Decision-Making",
+    "source_url": "https://www.tbs-sct.canada.ca/pol/doc-eng.aspx?id=32592",
+    "file_path": "data/raw/Directive on Automated Decision-Making- Canada.ca.pdf",
+    "sha256_hash": "3515af006c258e347154707357e9c648b24ad431abb6eccc3073908b512603b7",
+    "date_accessed": "2026-04-14 20:32:32.315807",
+    "total_pages": 19
+  },
+  "tb_adm_guide": {
+    "id": "tb_adm_guide",
+    "title": "Guide on the Scope of the Directive on Automated Decision-Making",
+    "source_url": "https://www.canada.ca/en/government/system/digital-government/digital-government-innovations/responsible-use-ai/guide-scope-directive-automated-decision-making.html",
+    "file_path": "data/raw/Guide on the Scope of the Directive on Automated Decision-Making - Canada.ca.pdf",
+    "sha256_hash": "ae3275f63124005c6362d8d000f4f80e57d078e27312474680729fe87dff9676",
+    "date_accessed": "2026-04-14 20:32:32.316718",
+    "total_pages": 12
+  },
+  "pipeda": {
+    "id": "pipeda",
+    "title": "Personal Information Protection and Electronic Documents Act",
+    "source_url": "https://www.priv.gc.ca/en/privacy-topics/privacy-laws-in-canada/the-personal-information-protection-and-electronic-documents-act-pipeda/",
+    "file_path": "data/raw/Personal Information Protection and Electronic Documents Act.pdf",
+    "sha256_hash": "faf657d101523604c2a9877fa5af3ef60179203037edfe938dfa18ce90487fe4",
+    "date_accessed": "2026-04-14 20:32:32.318927",
+    "total_pages": 69
+  },
+  "aia": {
+    "id": "aia",
+    "title": "Algorithmic Impact Assessment Tool",
+    "source_url": "https://www.canada.ca/en/government/system/digital-government/digital-government-innovations/responsible-use-ai/algorithmic-impact-assessment.html",
+    "file_path": "data/raw/Algorithmic Impact Assessment tool - Canada.ca.pdf",
+    "sha256_hash": "6e3f8bcd5685ff222fb285141f82d5f1b9bcb48c3ce2533365da596dfa0e8f2a",
+    "date_accessed": "2026-04-14 20:32:32.320159",
+    "total_pages": 12
+  },
+  "osfi_b13": {
+    "id": "osfi_b13",
+    "title": "Technology and Cyber Risk Management",
+    "source_url": "https://www.osfi-bsif.gc.ca/en/guidance/guidance-library/technology-and-cyber-risk-management-guideline",
+    "file_path": "data/raw/Technology and Cyber Risk Management.pdf",
+    "sha256_hash": "4fc75c367c8feffade369896ba4507dfff20814070c67af9bc9cfd3013f53667",
+    "date_accessed": "2026-04-14 20:32:32.321189",
+    "total_pages": 24
+  }
+}
