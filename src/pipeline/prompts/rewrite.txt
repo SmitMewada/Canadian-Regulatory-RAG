@@ -1,0 +1,13 @@
+Given the user's question about Canadian financial regulation,
+rewrite it to improve document retrieval. Preserve the original intent.
+
+If the question references specific guidelines (e.g., E-23, PIPEDA,
+Treasury Board Directive), keep those references.
+
+If the question mentions a specific section or clause number, preserve it exactly.
+
+If the question is ambiguous, make reasonable assumptions and note them.
+
+Output only the rewritten query, nothing else.
+
+Original question: {query}
