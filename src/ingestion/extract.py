@@ -3,29 +3,136 @@ import re
 from pathlib import Path
 from src.models.schemas import DocumentRecord
 
+# Patterns that indicate a TOC page
+TOC_INDICATORS = [
+    r'Table of Contents',
+    r'On this page\s*\n',
+]
+NOISE_LINES = [
+    r'^Canada\.ca\s*$',
+    r'^Canada\.ca\s+',
+    r'How government works',
+    r'About government',
+    r'Government in a digital age',
+    r'Digital government innovation',
+    r'Responsible use of artificial intelligence in government',
+    r'^On this page\s*$',
+    r'^View complete hierarchy\s*$',
+    r'^View all inactive instruments\s*$',
+    r'^Print-friendly XML\s*$',
+    r'^Expand all\s+Collapse all\s*$',
+    r'^ View complete hierarchy\s*$',
+    r'^Archives\s*$',
+    r'^Date modified:',
+    r'^Supporting tools\s*$',
+    r'^Tools:\s*$',
+    r'^More information\s*$',
+    r'^Policy:\s*$',
+    r'^Topic:\s*$',
+    r'^Hierarchy\s*$',
+    # OSFI repeating footer
+    r'^Guideline E-23',
+    r'^Office of the Superintendent of Financial Institutions\s*$',
+    r'^Page \d+\s*$',
+    # B-13 footer
+    r'^Technology and Cyber Risk Management\s*$',
+    r'^Table of Contents\s*$',
+]
+
+
+def is_toc_line(line: str) -> bool:
+    """
+    Returns True if line looks like a TOC entry.
+    Matches patterns like:
+        A. Overview
+        A.1 Purpose
+        B.1 Organizational enablement
+        C.3 Risk management intensity
+        Appendix 1: ...
+        Footnotes
+    """
+    line = line.strip()
+    if not line or len(line) > 80:
+        return False
+
+    # Matches: A., A.1, B.2, C.3, D.1 etc followed by text
+    if re.match(r'^[A-Z]\d*\.?\d*\s+\w', line):
+        return True
+
+    # Matches: Appendix, Footnotes
+    if re.match(r'^(Appendix|Footnotes)', line):
+        return True
+
+    return False
+
+def remove_noise_lines(text: str) -> str:
+    """
+    Remove noise lines anywhere in the text.
+    Handles website chrome, navigation elements, and TOC entries
+    that appear mixed with real content.
+    """
+    lines = text.split('\n')
+    cleaned = []
+    
+    # Track consecutive TOC lines — if we see 3+ in a row, strip the block
+    toc_buffer = []
+    
+    for line in lines:
+        # Check hard noise patterns
+        is_noise = any(re.search(pattern, line) for pattern in NOISE_LINES)
+        if is_noise:
+            continue
+            
+        # Check TOC lines
+        if is_toc_line(line):
+            toc_buffer.append(line)
+            continue
+        else:
+            # If we had fewer than 3 TOC lines, they might be real content
+            # (e.g. a section heading that looks like a TOC entry)
+            if len(toc_buffer) < 3:
+                cleaned.extend(toc_buffer)
+            # If 3 or more consecutive TOC lines — it's a real TOC block, discard
+            toc_buffer = []
+            cleaned.append(line)
+    
+    # Handle any remaining buffer
+    if len(toc_buffer) < 3:
+        cleaned.extend(toc_buffer)
+    
+    return '\n'.join(cleaned)
+
+
+def should_skip_page(text: str) -> bool:
+    """
+    Returns True only if the ENTIRE page is navigation with zero content.
+    After noise removal, if less than 100 chars remain — skip it.
+    """
+    after_cleaning = remove_noise_lines(text)
+    return len(after_cleaning.strip()) < 100
+
 
 def extract_text_from_pdf(file_path: str) -> tuple[list[dict], int]:
-    """
-    Extract text from a PDF file page by page using pdfplumber.
-    Handles both regular text and tables cleanly.
-    Returns list of page dicts and total page count.
-    """
     pages = []
 
     with pdfplumber.open(file_path) as pdf:
         total_pages = len(pdf.pages)
 
         for page_num, page in enumerate(pdf.pages):
-            # Extract tables first — convert to readable text
             table_text = extract_tables_as_text(page)
-
-            # Extract regular text
             raw_text = page.extract_text() or ""
 
-            # Combine: regular text + table text
             combined = raw_text
             if table_text:
                 combined = raw_text + "\n\n" + table_text
+
+            # Remove noise lines
+            combined = remove_noise_lines(combined)
+
+            # Skip if nothing meaningful remains
+            if should_skip_page(combined):
+                print(f"    Skipping empty/nav page {page_num + 1}")
+                continue
 
             cleaned = clean_text(combined)
 
