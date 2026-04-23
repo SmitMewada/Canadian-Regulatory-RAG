@@ -33,7 +33,7 @@ Compliance teams at Canadian financial institutions spend significant time manua
 
 This system answers those questions in under 2 seconds with traceable, cited, hallucination-controlled answers — and provides evaluation metrics to prove it.
 
-**Target users:** Compliance analysts, risk officers, and ML governance teams at Canadian banks and fintechs (RBC, Scotiabank, TD, BMO, Wealthsimple).
+
 
 ---
 
@@ -509,53 +509,9 @@ These are real lessons from the prototyping and build phases — not aspirationa
 - **Do not generate your eval set with an LLM.** The evaluation becomes circular — you are using one LLM to judge another LLM's answers about content that both LLMs have seen. Write the cases by hand from the source documents.
 - **Out-of-scope handling is harder to evaluate than in-scope answers.** The system can correctly return "I don't know," but a naive evaluator gives that a low score for not answering. Evaluation logic must explicitly handle and reward correct abstention.
 
----
-
-## Git Commit Strategy
-
-Commit at the end of each meaningful unit of work — not at the end of each day, and not after every line change.
-
-```
-Phase 1 checkpoints:
-  git commit -m "feat: dagster ingestion pipeline - download + hash manifest"
-  git commit -m "feat: dagster ingestion pipeline - PyMuPDF extraction + chunking"
-  git commit -m "feat: dagster ingestion pipeline - pgvector embed + load + BM25 index"
-  git commit -m "feat: dagster sensor - document update detection via SHA-256"
-
-Phase 2 checkpoints:
-  git commit -m "feat: langgraph - query rewrite + hybrid retrieve nodes"
-  git commit -m "feat: langgraph - cohere rerank + structured generation nodes"
-  git commit -m "feat: langgraph - inline faithfulness eval + retry logic"
-  git commit -m "feat: guardrails - disclaimer injection + citation validation"
-
-Phase 3 checkpoints:
-  git commit -m "feat: langfuse - traces wired to all langgraph nodes"
-  git commit -m "feat: langfuse - custom metrics: retrieval scores, eval scores, cost"
-
-Phase 4 checkpoints:
-  git commit -m "feat: eval - hand-curated dataset (40 cases)"
-  git commit -m "feat: eval - deepeval + ragas runner"
-  git commit -m "feat: eval - ci quality gate with threshold checks"
-  git commit -m "ci: github actions eval gate on pull_request to main"
-
-Phase 5 checkpoints:
-  git commit -m "feat: fastapi - /query endpoint with RegulatoryAnswer schema"
-  git commit -m "feat: fastapi - /metrics, /health, /feedback endpoints"
-  git commit -m "feat: docker compose - full stack orchestration"
-  git commit -m "feat: streamlit - basic query UI"
-
-Phase 6:
-  git commit -m "docs: README as design document"
-  git commit -m "docs: eval_report with metric results and charts"
-```
-
-**Rule:** If you cannot describe the commit in one sentence, split it into two commits.
-
----
-
 ## Contributing
 
-This is a portfolio project. If you find a bug or have a suggestion, open an issue. PRs that add test cases to `eval/eval_dataset.json` are especially welcome.
+Contributions are welcome. If you find a bug or have a suggestion, open an issue. PRs that add test cases to `eval/eval_dataset.json` are especially encouraged — a larger, more diverse evaluation dataset directly improves system reliability.
 
 ---
 
@@ -565,6 +521,4 @@ MIT License — see [LICENSE](LICENSE).
 
 ---
 
-*Built by Smit Mewada — targeting Toronto's financial services AI hiring market. March 2026.*
-
-*"I built a system that answers questions over Canadian financial regulatory documents with measurable reliability — I can show you evaluation metrics, hallucination controls, retrieval quality scores, and a CI gate that blocks deployment if quality degrades."*
+*Built by Smit Mewada | March 2026*
