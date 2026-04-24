@@ -86,3 +86,14 @@ class GraphState(TypedDict):
     retry_count: int
     langfuse_trace_id: Optional[str]
     cache_hit: bool
+    
+class RetrievedChunk(BaseModel):
+    id: int
+    chunk_text: str
+    document_id: str
+    section_heading: Optional[str] = None
+    page_number: Optional[int] = None
+    vector_score: Optional[float] = None
+    bm25_score: Optional[float] = None
+    rerank_score: Optional[float] = None  # add this
+    score: float  
