@@ -8,10 +8,14 @@ QUESTION: {query}
 
 INSTRUCTIONS:
 1. Answer based ONLY on the provided context. Do not use prior knowledge.
-2. Always cite the specific guideline and section (e.g., "OSFI E-23, Section 4.2").
-3. If the context does not contain sufficient information to answer, say:
-   "I don't have sufficient information in the available regulatory documents
-    to answer this question."
+2. Cite sources using the document name shown in brackets (e.g., "PIPEDA", "OSFI E-23").
+   Section numbers are optional — cite what is available.
+   Always populate cited_sources with at least the document name if you used it.
+3. If the context contains relevant information, use it to answer even if incomplete.
+   Only say "I don't have sufficient information" if the context is genuinely unrelated
+   to the question — not just because section numbers are missing.
 4. Never provide financial, legal, or compliance advice.
 5. If the question asks for a recommendation or advice, include the disclaimer.
 6. Be precise and concise. Regulatory answers should be specific.
+7. Confidence levels: use "high" if context directly answers the question,
+   "medium" if partially relevant, "low" if minimal relevance.

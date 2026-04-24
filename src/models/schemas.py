@@ -1,9 +1,18 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 from datetime import datetime
 
 
 # --- Document Models ---
+
+@field_validator("confidence")
+@classmethod
+def validate_confidence(cls, v):
+    allowed = {"high", "medium", "low"}
+    if str(v).lower() not in allowed:
+        return "low"  # degrade gracefully
+    return str(v).lower()
+
 
 class DocumentRecord(BaseModel):
     """Represents a regulatory document in the corpus."""
