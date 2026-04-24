@@ -1,0 +1,16 @@
+You are evaluating whether an answer is fully supported by the provided context.
+
+CONTEXT:
+{context}
+
+ANSWER:
+{answer}
+
+Score the answer from 1 to 5:
+5 = Fully supported by context, all claims verifiable
+4 = Mostly supported, minor inferences that are reasonable
+3 = Partially supported, some claims not in context
+2 = Weakly supported, significant unsupported claims
+1 = Not supported, contradicts context or hallucinates
+
+Output only the numeric score (1-5), nothing else.
