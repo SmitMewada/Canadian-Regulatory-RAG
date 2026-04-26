@@ -1,11 +1,6 @@
 from src.models.schemas import GraphState
 
 def citation_check_node(state: GraphState) -> GraphState:
-    """
-    Verifies that every cited source maps to an actual retrieved chunk.
-    Simple rule: cited_source must contain a document_id substring.
-    If any citation is invalid, downgrade confidence.
-    """
     answer = state["generated_answer"]
     chunks = state["reranked_chunks"] or state["retrieved_chunks"]
 
@@ -13,15 +8,16 @@ def citation_check_node(state: GraphState) -> GraphState:
         print("  [citation_check] no citations to verify")
         return {**state, "citation_valid": True}
 
-    # Get all document_ids from retrieved chunks
-    retrieved_doc_ids = {c.document_id.upper().replace("_", " ")
-                        for c in chunks}
+    # Normalize — remove hyphens and spaces for comparison
+    def normalize(s: str) -> str:
+        return s.upper().replace("-", "").replace("_", "").replace(" ", "")
+
+    retrieved_doc_ids = {normalize(c.document_id) for c in chunks}
 
     invalid = []
     for citation in answer.cited_sources:
-        citation_upper = citation.upper()
-        # Check if any retrieved doc_id is a substring of the citation
-        matched = any(doc_id in citation_upper
+        citation_norm = normalize(citation)
+        matched = any(doc_id in citation_norm or citation_norm in doc_id
                      for doc_id in retrieved_doc_ids)
         if not matched:
             invalid.append(citation)

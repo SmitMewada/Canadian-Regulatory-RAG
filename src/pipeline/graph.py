@@ -1,4 +1,3 @@
-# src/pipeline/graph.py
 import os
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
@@ -9,6 +8,8 @@ from src.pipeline.nodes.rerank import rerank_node
 from src.pipeline.nodes.generate import generate_node
 from src.pipeline.nodes.inline_eval import inline_eval_node
 from src.pipeline.nodes.citation_check import citation_check_node
+from src.pipeline.cache import get_cached_response, store_cached_response
+
 
 load_dotenv()
 
@@ -86,8 +87,27 @@ pipeline = build_graph()
 
 def run_pipeline(query: str, document_filter: str = None) -> dict:
     """
-    Main entry point. Takes a query, returns the final state.
+    Main entry point with semantic cache.
+    Checks cache first — runs full pipeline on miss.
     """
+    # Check cache first
+    cached = get_cached_response(query)
+    if cached:
+        return {
+            "original_query": query,
+            "rewritten_query": query,
+            "document_filter": document_filter,
+            "retrieved_chunks": [],
+            "reranked_chunks": [],
+            "generated_answer": cached,
+            "inline_eval_score": None,
+            "citation_valid": None,
+            "retry_count": 0,
+            "langfuse_trace_id": None,
+            "cache_hit": True,
+        }
+
+    # Cache miss — run full pipeline
     initial_state = GraphState(
         original_query=query,
         rewritten_query="",
@@ -103,4 +123,9 @@ def run_pipeline(query: str, document_filter: str = None) -> dict:
     )
 
     final_state = pipeline.invoke(initial_state)
+
+    # Store in cache if answer is good enough
+    if final_state["generated_answer"]:
+        store_cached_response(query, final_state["generated_answer"])
+
     return final_state
