@@ -55,7 +55,6 @@ if __name__ == "__main__":
         print(f"Needs review:   {answer.requires_human_review}")
         
      # ── Hallucination injection test ──────────────────────────────
-
     print(f"\n{'='*60}")
     print("HALLUCINATION INJECTION TEST")
 
