@@ -9,9 +9,17 @@ from src.pipeline.nodes.generate import generate_node
 from src.pipeline.nodes.inline_eval import inline_eval_node
 from src.pipeline.nodes.citation_check import citation_check_node
 from src.pipeline.cache import get_cached_response, store_cached_response
+from langfuse import Langfuse
 
 
 load_dotenv()
+
+_langfuse_client = Langfuse(
+    public_key=os.environ["LANGFUSE_PUBLIC_KEY"],
+    secret_key=os.environ["LANGFUSE_SECRET_KEY"],
+    host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
+)
+
 
 def should_retry(state: GraphState) -> str:
     """
@@ -87,12 +95,23 @@ pipeline = build_graph()
 
 def run_pipeline(query: str, document_filter: str = None) -> dict:
     """
-    Main entry point with semantic cache.
-    Checks cache first — runs full pipeline on miss.
+    Main entry point with semantic cache and Langfuse tracing.
     """
-    # Check cache first
+    session_id = f"session-{uuid.uuid4()}"  # NEW — unique per call
+
+    # --- CACHE HIT PATH ---
     cached = get_cached_response(query)
     if cached:
+        # NEW — trace cache hits so Langfuse shows cache traffic
+        trace = _langfuse_client.trace(
+            name="regulatory_rag_query",
+            session_id=session_id,
+            input={"query": query},
+            metadata={"cache_hit": True, "document_filter": document_filter},
+        )
+        trace.score(name="cache_hit", value=1)
+        _langfuse_client.flush()  # CRITICAL — from your learning logs
+
         return {
             "original_query": query,
             "rewritten_query": query,
@@ -103,11 +122,29 @@ def run_pipeline(query: str, document_filter: str = None) -> dict:
             "inline_eval_score": None,
             "citation_valid": None,
             "retry_count": 0,
-            "langfuse_trace_id": None,
+            "langfuse_trace_id": trace.id,  # NEW — expose trace ID
             "cache_hit": True,
         }
 
-    # Cache miss — run full pipeline
+    # --- CACHE MISS — FULL PIPELINE ---
+
+    # NEW — create trace before invoking graph
+    trace = _langfuse_client.trace(
+        name="regulatory_rag_query",
+        session_id=session_id,
+        input={"query": query},
+        metadata={"cache_hit": False, "document_filter": document_filter},
+    )
+
+    # NEW — CallbackHandler with explicit credentials (no-arg silently disables)
+    handler = CallbackHandler(
+        public_key=os.environ["LANGFUSE_PUBLIC_KEY"],
+        secret_key=os.environ["LANGFUSE_SECRET_KEY"],
+        host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
+        trace_id=trace.id,          # links callbacks to our trace
+        session_id=session_id,
+    )
+
     initial_state = GraphState(
         original_query=query,
         rewritten_query="",
@@ -118,14 +155,34 @@ def run_pipeline(query: str, document_filter: str = None) -> dict:
         inline_eval_score=None,
         citation_valid=None,
         retry_count=0,
-        langfuse_trace_id=None,
+        langfuse_trace_id=trace.id,  # NEW — stored so nodes can access it
         cache_hit=False,
     )
 
-    final_state = pipeline.invoke(initial_state)
+    # NEW — pass handler in config
+    final_state = pipeline.invoke(
+        initial_state,
+        config={"callbacks": [handler]},
+    )
 
-    # Store in cache if answer is good enough
-    if final_state["generated_answer"]:
-        store_cached_response(query, final_state["generated_answer"])
+    # NEW — update trace with output and scores
+    answer = final_state.get("generated_answer")
+    trace.update(
+        output={"answer": answer.answer if answer else None},
+        metadata={
+            "inline_eval_score": final_state.get("inline_eval_score"),
+            "citation_valid": final_state.get("citation_valid"),
+            "retry_count": final_state.get("retry_count"),
+            "confidence": answer.confidence if answer else None,
+        },
+    )
+    if final_state.get("inline_eval_score") is not None:
+        trace.score(name="inline_faithfulness", value=final_state["inline_eval_score"])
+
+    # CRITICAL — from your learning logs: flush before return or traces are lost
+    _langfuse_client.flush()
+
+    if answer:
+        store_cached_response(query, answer)
 
     return final_state
