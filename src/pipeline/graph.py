@@ -9,6 +9,8 @@ from src.pipeline.nodes.generate import generate_node
 from src.pipeline.nodes.inline_eval import inline_eval_node
 from src.pipeline.nodes.citation_check import citation_check_node
 from src.pipeline.cache import get_cached_response, store_cached_response
+import uuid
+from langfuse import CallbackHandler
 from langfuse import Langfuse
 
 
