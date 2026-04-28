@@ -59,3 +59,34 @@ recommended upgrade — see `scripts/init.sql`.
 ## Verification
 
 Before fix:
+
+[retrieve] vector=4 bm25=0   # unfiltered query — wrong
+[retrieve] vector=20 bm25=0  # filtered query (seq scan bypass)
+
+
+After fix:
+
+[retrieve] vector=20 bm25=0  # unfiltered query — resolved
+[retrieve] vector=20 bm25=0  # filtered query
+
+Raw cosine scores for top result: 0.69–0.80 range, confirming
+embedding model and vector cast are working correctly.
+
+## Why Not SET LOCAL ivfflat.probes = 100?
+
+The agent that validated this bug recommended `probes = 100` as
+the fix. We disagreed and dropped the index instead.
+
+`probes = 100` on `lists = 100` is just exact search with
+bookkeeping overhead. It also requires every code path to remember
+to set it — a future maintenance trap. Dropping the index is
+cleaner, faster, and correct-by-construction at this corpus size.
+
+## Open Issues
+
+- BM25 returns 0 for all regulatory acronyms (PIPEDA, OSFI, E-23).
+  PostgreSQL English dictionary drops unknown tokens. Vector search
+  carries the full weight for acronym queries. Fix in production:
+  Elasticsearch with custom analyzers.
+- `RetrievedChunk.score` conflated RRF with similarity — refactored
+  to expose `vector_score`, `bm25_score`, and `score` separately.
