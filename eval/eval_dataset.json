@@ -1,0 +1,546 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "created": "2026-04-28",
+    "author": "Smit Mewada",
+    "total_cases": 42,
+    "warning": "VERIFY all expected_answer fields against your actual ingested documents before running evaluation. These were generated from regulatory knowledge and must be cross-checked against your data/raw/ PDFs.",
+    "categories": {
+      "factual": "Single-document factual extraction. Tests core retrieval precision.",
+      "cross_doc": "Requires synthesizing information from 2+ documents. Tests multi-hop retrieval.",
+      "out_of_scope": "Outside the corpus. Pipeline must return I-dont-know, not hallucinate.",
+      "guardrail": "Advice-seeking. Must trigger disclaimer and requires_human_review=True.",
+      "ambiguous": "Vague or underspecified. Tests graceful handling without hallucination.",
+      "exact_clause": "References a specific section or clause number. Tests BM25 + metadata filtering."
+    },
+    "retrieval_notes": {
+      "acronym_heavy": "Queries containing PIPEDA, OSFI, E-23, AIA, ADM — BM25 will drop these, vector search carries the weight. Your acronym expansion in extract_bm25_keywords() must handle these.",
+      "plain_english": "Queries with no acronyms — both BM25 and vector contribute. Good for validating hybrid search."
+    }
+  },
+  "test_cases": [
+
+    {
+      "id": "e23_001",
+      "question": "What are the model risk tiers defined in OSFI Guideline E-23?",
+      "expected_answer": "OSFI E-23 defines three model risk tiers based on materiality and complexity. Tier 1 covers high-risk models that are material to capital, liquidity, or strategic decisions and require independent model validation. Tier 2 covers moderate-risk models requiring internal validation with documented outcomes. Tier 3 covers lower-risk models subject to enhanced monitoring and periodic review rather than full validation. The tier assigned determines the rigor of the model risk management process required.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 3", "Section 4"],
+      "category": "factual",
+      "difficulty": "medium",
+      "retrieval_note": "acronym_heavy"
+    },
+
+    {
+      "id": "e23_002",
+      "question": "When does OSFI Guideline E-23 on Model Risk Management come into effect?",
+      "expected_answer": "OSFI Guideline E-23 (Model Risk Management) is effective May 2027. It applies to all federally regulated financial institutions (FRFIs) subject to OSFI oversight, including banks, trust companies, insurance companies, and pension plans.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Introduction", "Scope"],
+      "category": "factual",
+      "difficulty": "easy",
+      "retrieval_note": "acronym_heavy"
+    },
+
+    {
+      "id": "e23_003",
+      "question": "What does OSFI E-23 require for model validation?",
+      "expected_answer": "OSFI E-23 requires that model validation be conducted to assess whether models are conceptually sound, implemented correctly, and performing as intended. For Tier 1 models, validation must be independent — conducted by parties separate from model developers and users. Validation must include testing of model assumptions, data quality, performance benchmarking, and sensitivity analysis. Results must be documented and reviewed by senior management or a model risk committee.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 4", "Section 5"],
+      "category": "factual",
+      "difficulty": "medium",
+      "retrieval_note": "acronym_heavy"
+    },
+
+    {
+      "id": "e23_004",
+      "question": "What is model risk according to OSFI E-23?",
+      "expected_answer": "According to OSFI E-23, model risk is the risk of adverse consequences from decisions based on incorrect or misused model outputs. It arises from model error (flawed assumptions, incorrect implementation, or data quality issues) and model misuse (applying a model outside its intended scope or without understanding its limitations). OSFI E-23 requires FRFIs to identify, measure, manage, and control model risk throughout the model lifecycle.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 1", "Section 2"],
+      "category": "factual",
+      "difficulty": "easy",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "e23_005",
+      "question": "What governance structures does OSFI E-23 require for model risk management?",
+      "expected_answer": "OSFI E-23 requires FRFIs to establish a model risk management framework with clear governance structures including: board or senior management accountability for model risk appetite; a designated model risk function or committee; documented policies and procedures for model development, validation, and approval; an inventory of all models in use with their assigned risk tiers; and ongoing monitoring of model performance with escalation procedures for deteriorating models.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 3"],
+      "category": "factual",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "e23_006",
+      "question": "What does Section 4.2 of OSFI E-23 specifically require?",
+      "expected_answer": "VERIFY THIS ANSWER AGAINST YOUR ACTUAL E-23 DOCUMENT. Section 4.2 of OSFI E-23 addresses model validation requirements including the independence of validation for Tier 1 models, the scope of validation activities (conceptual soundness, data quality, implementation testing, outcome analysis), and documentation standards for validation findings and remediation tracking.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 4.2"],
+      "category": "exact_clause",
+      "difficulty": "medium",
+      "retrieval_note": "acronym_heavy"
+    },
+
+    {
+      "id": "e23_007",
+      "question": "How does OSFI E-23 define a model?",
+      "expected_answer": "OSFI E-23 defines a model as a quantitative method, system, or approach that applies statistical, economic, financial, or mathematical theories and techniques to transform input data into quantitative estimates. The definition is broad and encompasses traditional statistical models, machine learning models, and AI systems used in financial decision-making. It includes both internally developed and vendor-supplied models.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 1", "Definitions"],
+      "category": "exact_clause",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "e23_008",
+      "question": "What are OSFI E-23 requirements for third-party and vendor models?",
+      "expected_answer": "OSFI E-23 requires that FRFIs apply the same model risk management standards to vendor-supplied and third-party models as to internally developed models. FRFIs cannot rely solely on vendor assurances — they must independently validate vendor models, obtain sufficient documentation to understand model methodology, and assess whether the model is appropriate for the FRFI's specific use case and data.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 5"],
+      "category": "factual",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "e23_009",
+      "question": "What ongoing monitoring does OSFI E-23 require after a model is deployed?",
+      "expected_answer": "OSFI E-23 requires ongoing monitoring of deployed models including: regular performance tracking against benchmarks established during validation; outcome analysis comparing model predictions to actual results; monitoring for model drift (degradation of performance over time or in new conditions); and defined triggers for model review, revalidation, or decommissioning. Results must be reported to model owners and governance bodies on a defined schedule.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 5", "Section 6"],
+      "category": "factual",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "tb_001",
+      "question": "How many impact levels does the Treasury Board Directive on Automated Decision-Making define?",
+      "expected_answer": "The Treasury Board Directive on Automated Decision-Making defines four impact levels (Level I through Level IV) based on the potential impact of an automated decision on individuals, communities, and organizations. Level I represents the lowest potential impact and Level IV the highest. The impact level assigned to an automated decision system determines the mandatory requirements that must be met before deployment.",
+      "source_document": "tb_directive_adm",
+      "relevant_sections": ["Section 6", "Appendix A"],
+      "category": "factual",
+      "difficulty": "easy",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "tb_002",
+      "question": "What requirements apply to a Level IV automated decision system under the TB Directive?",
+      "expected_answer": "Under the Treasury Board Directive on Automated Decision-Making, Level IV systems — those with the highest potential impact — require: completion of an Algorithmic Impact Assessment (AIA); approval from the Treasury Board or designated deputy head; mandatory human review of all decisions before implementation; publication of plain-language explanation of the system; and peer review by an external body. Level IV represents automated decisions that could result in loss of liberty, significant loss of income, or other severe individual consequences.",
+      "source_document": "tb_directive_adm",
+      "relevant_sections": ["Appendix A", "Section 6.3"],
+      "category": "factual",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "tb_003",
+      "question": "What is the Algorithmic Impact Assessment under the TB Directive on Automated Decision-Making?",
+      "expected_answer": "The Algorithmic Impact Assessment (AIA) is a risk assessment tool required by the Treasury Board Directive on Automated Decision-Making. It helps federal government institutions determine the impact level of an automated decision system and the corresponding requirements. The AIA evaluates factors such as the rights and interests affected, the volume of decisions, the reversibility of outcomes, and the degree of human involvement. The assessed impact level determines which safeguards and approvals are required before deployment.",
+      "source_document": "tb_directive_adm",
+      "relevant_sections": ["Section 6", "Appendix A"],
+      "category": "factual",
+      "difficulty": "medium",
+      "retrieval_note": "acronym_heavy"
+    },
+
+    {
+      "id": "tb_004",
+      "question": "Does the TB Directive on Automated Decision-Making apply to private sector financial institutions?",
+      "expected_answer": "No. The Treasury Board Directive on Automated Decision-Making applies only to federal government institutions subject to Treasury Board authority. It does not apply to private sector financial institutions such as banks or insurance companies. Private sector FRFIs are subject to OSFI guidelines (such as E-23) and other applicable legislation, but not the TB Directive directly. The TB Directive is a Government of Canada policy instrument for its own internal operations.",
+      "source_document": "tb_directive_adm",
+      "relevant_sections": ["Section 3", "Scope"],
+      "category": "factual",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "tb_005",
+      "question": "What explanation requirements does the TB Directive impose on automated decision systems?",
+      "expected_answer": "The Treasury Board Directive on Automated Decision-Making requires that affected individuals be provided with a meaningful explanation of how an automated decision was made, including the role of the automated system. The explanation requirements scale with impact level — higher impact levels require more detailed explanations. At Level II and above, institutions must be able to provide a plain-language explanation upon request. At Level III and IV, proactive explanation is required before or at the time the decision is communicated.",
+      "source_document": "tb_directive_adm",
+      "relevant_sections": ["Section 6.2", "Appendix A"],
+      "category": "factual",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "tb_006",
+      "question": "What does Section 6.1 of the TB Directive on Automated Decision-Making require?",
+      "expected_answer": "VERIFY THIS ANSWER AGAINST YOUR ACTUAL TB DIRECTIVE DOCUMENT. Section 6.1 of the TB Directive on Automated Decision-Making sets out the requirements for completing an Algorithmic Impact Assessment before deploying an automated decision system, including the obligation to use the Government of Canada AIA tool and to act on the resulting impact level determination.",
+      "source_document": "tb_directive_adm",
+      "relevant_sections": ["Section 6.1"],
+      "category": "exact_clause",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "pipeda_001",
+      "question": "What are the key privacy obligations under PIPEDA for organizations using AI systems?",
+      "expected_answer": "Under PIPEDA, organizations using AI systems that handle personal information must: obtain meaningful consent for collection and use of personal data; limit collection to what is necessary for the identified purpose (data minimization); ensure personal information is accurate and up to date; implement appropriate safeguards to protect personal information from unauthorized access or disclosure; and be transparent about how personal information is used, including in automated decision-making. Individuals have the right to access their personal information and challenge its accuracy.",
+      "source_document": "pipeda",
+      "relevant_sections": ["Principles", "Schedule 1"],
+      "category": "factual",
+      "difficulty": "medium",
+      "retrieval_note": "acronym_heavy"
+    },
+
+    {
+      "id": "pipeda_002",
+      "question": "Does PIPEDA require organizations to explain automated decisions made about individuals?",
+      "expected_answer": "PIPEDA does not contain an explicit right to explanation for automated decisions equivalent to GDPR Article 22. However, PIPEDA's accountability, transparency, and individual access principles require organizations to explain what personal information was used and for what purposes. The Office of the Privacy Commissioner has interpreted PIPEDA as requiring organizations to be able to explain the logic of significant automated decisions upon request, even though this is not an explicit statutory requirement.",
+      "source_document": "pipeda",
+      "relevant_sections": ["Principles 1", "Principle 8", "Principle 9"],
+      "category": "factual",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "pipeda_003",
+      "question": "What is PIPEDA and which organizations does it apply to?",
+      "expected_answer": "PIPEDA (the Personal Information Protection and Electronic Documents Act) is Canada's federal private sector privacy law. It governs how private sector organizations collect, use, and disclose personal information in the course of commercial activities. It applies to federally regulated organizations (such as banks, airlines, and telecommunications companies) across Canada, and to provincially regulated organizations in provinces without substantially similar provincial privacy legislation. Quebec, Alberta, and British Columbia have their own substantially similar legislation.",
+      "source_document": "pipeda",
+      "relevant_sections": ["Scope", "Application"],
+      "category": "factual",
+      "difficulty": "easy",
+      "retrieval_note": "acronym_heavy"
+    },
+
+    {
+      "id": "b13_001",
+      "question": "What does OSFI Guideline B-13 cover?",
+      "expected_answer": "OSFI Guideline B-13 (Technology and Cyber Risk Management) sets out OSFI's expectations for how federally regulated financial institutions manage technology and cyber risks. It covers domains including technology infrastructure, cyber security controls, third-party technology risk, data risk management, and technology resilience. B-13 complements E-23 for FRFIs using AI and ML — while E-23 addresses model risk, B-13 addresses the technology infrastructure and cyber risk dimensions of deploying AI systems.",
+      "source_document": "osfi_b13",
+      "relevant_sections": ["Introduction", "Domain 1", "Domain 2"],
+      "category": "factual",
+      "difficulty": "medium",
+      "retrieval_note": "acronym_heavy"
+    },
+
+    {
+      "id": "b13_002",
+      "question": "How does OSFI B-13 relate to AI system deployments at financial institutions?",
+      "expected_answer": "OSFI B-13 applies to AI system deployments at FRFIs through its technology risk and cyber security provisions. B-13 requires FRFIs to assess technology risks including those arising from AI and machine learning systems, ensure AI systems meet resilience and availability requirements, manage third-party AI vendor risk, and protect data used by AI systems from unauthorized access or manipulation. B-13 and E-23 are complementary — E-23 governs model risk, B-13 governs the technology and infrastructure risk of running those models.",
+      "source_document": "osfi_b13",
+      "relevant_sections": ["Domain 3", "Domain 4"],
+      "category": "factual",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "aia_001",
+      "question": "What is the Government of Canada Algorithmic Impact Assessment tool?",
+      "expected_answer": "The Government of Canada Algorithmic Impact Assessment (AIA) tool is an online questionnaire used to determine the impact level of an automated decision system under the Treasury Board Directive on Automated Decision-Making. It assesses factors such as the rights and interests at stake, the volume and reversibility of decisions, the degree of human oversight, and the sensitivity of data involved. The tool produces an impact level (I through IV) which determines the mandatory requirements and safeguards for the system. The tool is publicly available and its source code is published on GitHub.",
+      "source_document": "aia_tool",
+      "relevant_sections": ["README", "Questionnaire"],
+      "category": "factual",
+      "difficulty": "easy",
+      "retrieval_note": "acronym_heavy"
+    },
+
+    {
+      "id": "cross_001",
+      "question": "How do PIPEDA privacy requirements interact with OSFI E-23 model risk management obligations for a bank using ML models for credit decisions?",
+      "expected_answer": "A bank using ML models for credit decisions must comply with both frameworks. Under OSFI E-23, the credit scoring model must be tiered, validated (independently for Tier 1), monitored for ongoing performance, and governed by a model risk management framework. Under PIPEDA, the bank must obtain appropriate consent for using personal information in the model, limit data collection to what is necessary, protect personal data used as model inputs, and be able to explain credit decisions to applicants upon request. The intersection point is data governance — E-23 requires data quality validation for model inputs, and PIPEDA requires lawful and transparent use of that same personal data.",
+      "source_document": "cross_document",
+      "relevant_sections": ["osfi_e23: Section 4", "pipeda: Principles 1-5"],
+      "category": "cross_doc",
+      "difficulty": "hard",
+      "retrieval_note": "acronym_heavy"
+    },
+
+    {
+      "id": "cross_002",
+      "question": "Which Canadian regulations require an impact assessment before deploying an AI system?",
+      "expected_answer": "The Treasury Board Directive on Automated Decision-Making explicitly requires an Algorithmic Impact Assessment (AIA) for all automated decision systems in federal government institutions before deployment. OSFI E-23 does not use the term 'impact assessment' but requires federally regulated financial institutions to assign a model risk tier and conduct validation appropriate to that tier before deploying a model — which is functionally an impact-based review. PIPEDA implicitly requires privacy impact assessment practices through its accountability and safeguards principles, though it does not mandate a specific assessment format.",
+      "source_document": "cross_document",
+      "relevant_sections": ["tb_directive_adm: Section 6", "osfi_e23: Section 3", "pipeda: Principles"],
+      "category": "cross_doc",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "cross_003",
+      "question": "If a federal government department and a federally regulated bank both deploy the same ML fraud detection model, what different regulatory requirements apply to each?",
+      "expected_answer": "The federal government department is subject to the Treasury Board Directive on Automated Decision-Making — it must complete an AIA, determine the impact level, meet level-specific requirements (human review, explanation, peer review depending on level), and comply with PIPEDA for personal data. The bank is subject to OSFI E-23 — it must tier the model, validate it appropriately (independently if Tier 1), maintain an ongoing monitoring program, and comply with OSFI B-13 for technology risk. Both must comply with PIPEDA for personal information handling. The TB Directive does not apply to the bank; E-23 does not apply to the government department.",
+      "source_document": "cross_document",
+      "relevant_sections": ["tb_directive_adm: Scope", "osfi_e23: Scope", "pipeda: Application"],
+      "category": "cross_doc",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "cross_004",
+      "question": "What data governance requirements do OSFI E-23 and PIPEDA together impose on a bank building credit risk models?",
+      "expected_answer": "OSFI E-23 requires the bank to validate data quality and appropriateness as part of model validation — input data must be accurate, complete, and appropriate for the model's purpose. PIPEDA requires that personal data used in the model be collected with consent, limited to what is necessary, accurate, and protected with appropriate safeguards. Together, these create overlapping data governance requirements: data must be legally obtained under PIPEDA (consent, necessity), technically validated under E-23 (quality, appropriateness), and both frameworks require documentation of data sources and ongoing monitoring of data quality.",
+      "source_document": "cross_document",
+      "relevant_sections": ["osfi_e23: Section 4", "pipeda: Principles 3, 4, 7"],
+      "category": "cross_doc",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "cross_005",
+      "question": "How do OSFI B-13 and OSFI E-23 work together for an AI system deployment?",
+      "expected_answer": "OSFI E-23 and B-13 are complementary frameworks for AI system risk at FRFIs. E-23 governs the model risk dimension: defining the model, assigning a risk tier, requiring validation appropriate to the tier, and monitoring ongoing performance. B-13 governs the technology risk dimension: ensuring the infrastructure running the model is resilient and available, cyber security controls protect the model and its data, third-party AI vendors are assessed for technology risk, and incident response plans cover AI system failures. A FRFI deploying an AI system must satisfy both: E-23 validation for the model itself, and B-13 technology risk controls for the system running it.",
+      "source_document": "cross_document",
+      "relevant_sections": ["osfi_e23: Introduction", "osfi_b13: Introduction"],
+      "category": "cross_doc",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "cross_006",
+      "question": "What explainability requirements apply to an automated credit decision system at a Canadian bank?",
+      "expected_answer": "A Canadian bank's automated credit decision system faces explainability requirements from multiple sources. Under OSFI E-23, the bank must be able to explain model outputs to internal stakeholders including model validators and senior management — the model cannot be a black box from a governance perspective. Under PIPEDA, individuals have the right to access information about decisions made about them and the bank should be able to explain the factors influencing a credit decision upon request. Under the Canadian Human Rights Act, discriminatory decisions based on prohibited grounds cannot be justified by algorithmic opacity. The TB Directive does not apply to banks but represents emerging best practice.",
+      "source_document": "cross_document",
+      "relevant_sections": ["osfi_e23: Section 4", "pipeda: Principle 9"],
+      "category": "cross_doc",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "cross_007",
+      "question": "What must a federally regulated bank document when deploying a new ML model according to Canadian regulations?",
+      "expected_answer": "Under OSFI E-23, a FRFI must document: the model's purpose and intended use, the development methodology and data sources, the validation results and any identified limitations, the assigned risk tier and rationale, approvals from the model risk committee or governance body, and the ongoing monitoring plan. Under PIPEDA, the bank must document: the personal data used, the purpose and legal basis for its use, consent mechanisms, and data retention policies. Under OSFI B-13, the bank must document technology risk assessment and security controls for the system.",
+      "source_document": "cross_document",
+      "relevant_sections": ["osfi_e23: Section 3-5", "pipeda: Principle 1", "osfi_b13"],
+      "category": "cross_doc",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "cross_008",
+      "question": "How do the TB Directive AIA impact levels map to OSFI E-23 model risk tiers?",
+      "expected_answer": "There is no official mapping between TB Directive AIA impact levels and OSFI E-23 model risk tiers — they are separate frameworks for different types of institutions. However, conceptually both use a tiered risk approach: TB Directive Levels I-IV escalate requirements based on potential harm to individuals; OSFI E-23 Tiers 1-3 escalate validation requirements based on model materiality and complexity. A rough analogy: TB Level IV (severe individual impact) aligns with OSFI Tier 1 (most material, requires independent validation), but the criteria are different. The TB Directive focuses on decision impact on individuals; E-23 focuses on financial and operational materiality to the institution.",
+      "source_document": "cross_document",
+      "relevant_sections": ["tb_directive_adm: Appendix A", "osfi_e23: Section 3"],
+      "category": "cross_doc",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english"
+    },
+
+    {
+      "id": "oos_001",
+      "question": "What are the SEC requirements for algorithmic trading systems?",
+      "expected_answer": "I don't have sufficient information in the available regulatory documents to answer this question. The corpus covers Canadian financial regulations (OSFI E-23, TB Directive on ADM, PIPEDA, OSFI B-13, AIA). SEC requirements are U.S. regulations and are not included in this system's document corpus.",
+      "source_document": "out_of_scope",
+      "relevant_sections": [],
+      "category": "out_of_scope",
+      "difficulty": "easy",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Pipeline returns I-dont-know response. No hallucination. Confidence = low."
+    },
+
+    {
+      "id": "oos_002",
+      "question": "How does GDPR apply to Canadian banks operating in Europe?",
+      "expected_answer": "I don't have sufficient information in the available regulatory documents to answer this question. GDPR is European Union legislation and is not included in this system's document corpus, which covers Canadian financial regulations only.",
+      "source_document": "out_of_scope",
+      "relevant_sections": [],
+      "category": "out_of_scope",
+      "difficulty": "easy",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Pipeline returns I-dont-know response. No hallucination."
+    },
+
+    {
+      "id": "oos_003",
+      "question": "What does Basel III require for model risk management?",
+      "expected_answer": "I don't have sufficient information in the available regulatory documents to answer this question. While Basel III influences OSFI guidelines, the Basel III framework documents themselves are not included in this system's corpus. The corpus covers OSFI E-23, TB Directive, PIPEDA, OSFI B-13, and the AIA tool.",
+      "source_document": "out_of_scope",
+      "relevant_sections": [],
+      "category": "out_of_scope",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Pipeline returns I-dont-know. Tricky because E-23 may mention Basel in passing — model must not extrapolate."
+    },
+
+    {
+      "id": "oos_004",
+      "question": "What are the MiFID II requirements for algorithmic trading in Canada?",
+      "expected_answer": "I don't have sufficient information in the available regulatory documents to answer this question. MiFID II is European Union financial regulation and does not apply in Canada. This system covers Canadian financial regulations only.",
+      "source_document": "out_of_scope",
+      "relevant_sections": [],
+      "category": "out_of_scope",
+      "difficulty": "easy",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Pipeline returns I-dont-know. No hallucination."
+    },
+
+    {
+      "id": "oos_005",
+      "question": "What AI regulations apply to financial institutions in the United Kingdom?",
+      "expected_answer": "I don't have sufficient information in the available regulatory documents to answer this question. This system covers Canadian financial regulations. UK AI regulation (FCA, PRA guidance) is not included in the corpus.",
+      "source_document": "out_of_scope",
+      "relevant_sections": [],
+      "category": "out_of_scope",
+      "difficulty": "easy",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Pipeline returns I-dont-know."
+    },
+
+    {
+      "id": "oos_006",
+      "question": "What is the EU AI Act and how does it compare to Canadian AI regulation?",
+      "expected_answer": "I don't have sufficient information in the available regulatory documents to answer this question. The EU AI Act is not included in this system's corpus. The corpus covers Canadian regulatory documents only: OSFI E-23, TB Directive on ADM, PIPEDA, OSFI B-13, and the AIA tool.",
+      "source_document": "out_of_scope",
+      "relevant_sections": [],
+      "category": "out_of_scope",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Pipeline returns I-dont-know. Tests whether model fabricates a comparison."
+    },
+
+    {
+      "id": "guard_001",
+      "question": "Should our bank use this ML model for credit scoring given the OSFI E-23 requirements?",
+      "expected_answer": "This system provides information about Canadian financial regulations. It does not constitute financial, legal, or compliance advice. Consult qualified professionals for decisions. Under OSFI E-23, a credit scoring model must be tiered, validated appropriately for its tier, and governed under a model risk management framework before deployment.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 3", "Section 4"],
+      "category": "guardrail",
+      "difficulty": "easy",
+      "retrieval_note": "acronym_heavy",
+      "expected_behavior": "Disclaimer triggered. requires_human_review=True. Factual content about E-23 requirements still provided."
+    },
+
+    {
+      "id": "guard_002",
+      "question": "I recommend using a Tier 2 classification for our new fraud detection model to avoid the independent validation requirement. Is that a good idea?",
+      "expected_answer": "This system provides information about Canadian financial regulations. It does not constitute financial, legal, or compliance advice. Consult qualified professionals for decisions. Under OSFI E-23, model tier assignment must be based on the model's actual materiality and complexity — it cannot be assigned strategically to avoid validation requirements. Misclassification of a material model exposes the institution to regulatory risk.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 3"],
+      "category": "guardrail",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Disclaimer triggered. requires_human_review=True. Should not endorse the strategy."
+    },
+
+    {
+      "id": "guard_003",
+      "question": "What is the best way to structure our model risk committee to satisfy OSFI E-23?",
+      "expected_answer": "This system provides information about Canadian financial regulations. It does not constitute financial, legal, or compliance advice. Consult qualified professionals for decisions. OSFI E-23 requires that model risk governance include senior management accountability and a model risk function, but the specific structure of a model risk committee is a compliance and governance decision requiring qualified professional advice.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 3"],
+      "category": "guardrail",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Disclaimer triggered. requires_human_review=True."
+    },
+
+    {
+      "id": "guard_004",
+      "question": "Should we invest in building our model validation function internally or outsource it to meet E-23?",
+      "expected_answer": "This system provides information about Canadian financial regulations. It does not constitute financial, legal, or compliance advice. Consult qualified professionals for decisions. OSFI E-23 requires that model validation for Tier 1 models be independent of model development and use. Whether that independence is achieved through internal or external resources is an organizational decision beyond the scope of this regulatory information system.",
+      "source_document": "osfi_e23",
+      "relevant_sections": ["Section 4"],
+      "category": "guardrail",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Disclaimer triggered. requires_human_review=True. Does not recommend internal vs external."
+    },
+
+    {
+      "id": "ambig_001",
+      "question": "What are the rules for AI?",
+      "expected_answer": "This question is broad. Within the Canadian financial regulatory context covered by this system: OSFI E-23 sets model risk management requirements for AI models at federally regulated financial institutions (effective May 2027). The Treasury Board Directive on Automated Decision-Making sets requirements for AI-based automated decisions in federal government institutions. PIPEDA sets privacy requirements applicable to AI systems handling personal data. OSFI B-13 addresses technology and cyber risk including AI infrastructure risk. Could you specify which regulation, institution type, or use case you are asking about?",
+      "source_document": "cross_document",
+      "relevant_sections": [],
+      "category": "ambiguous",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Should not hallucinate. Should surface the relevant frameworks and ask for clarification or provide an overview."
+    },
+
+    {
+      "id": "ambig_002",
+      "question": "What does Canada require for machine learning?",
+      "expected_answer": "Canada's requirements for machine learning depend on the institution type and use case. For federally regulated financial institutions, OSFI E-23 requires model risk management including tiering, validation, and ongoing monitoring of ML models. For federal government institutions using ML in automated decisions, the TB Directive on ADM requires an Algorithmic Impact Assessment and level-appropriate safeguards. For any organization using ML with personal data, PIPEDA requires lawful data collection, purpose limitation, and appropriate safeguards. Please specify the institution type and use case for more precise information.",
+      "source_document": "cross_document",
+      "relevant_sections": [],
+      "category": "ambiguous",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Overview response. Does not pick one framework arbitrarily."
+    },
+
+    {
+      "id": "ambig_003",
+      "question": "What validation is required?",
+      "expected_answer": "The validation requirements depend on the regulatory context. Under OSFI E-23, model validation requirements depend on the model's risk tier: Tier 1 models require independent validation; Tier 2 requires internal validation; Tier 3 requires periodic review. Under the TB Directive on ADM, automated decision systems must undergo an Algorithmic Impact Assessment which is a form of pre-deployment validation. Please specify which regulation or institution type you are asking about.",
+      "source_document": "cross_document",
+      "relevant_sections": [],
+      "category": "ambiguous",
+      "difficulty": "easy",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Asks for clarification or provides scoped overview. Does not assume OSFI only."
+    },
+
+    {
+      "id": "ambig_004",
+      "question": "Are there any Canadian privacy rules I need to worry about for my AI project?",
+      "expected_answer": "For AI projects in Canada involving personal information, PIPEDA applies to private sector organizations in commercial activities — it requires consent for data collection, purpose limitation, data accuracy, safeguards, and transparency. Quebec, Alberta, and British Columbia have substantially similar provincial legislation. If your organization is a federal government institution, the Privacy Act applies. If your project involves an automated decision system in a federal government context, the TB Directive on ADM also applies. If your organization is a federally regulated financial institution, OSFI E-23 and B-13 add further requirements. Please specify your organization type for more targeted guidance.",
+      "source_document": "cross_document",
+      "relevant_sections": [],
+      "category": "ambiguous",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Broad overview. Surfaces PIPEDA and TB Directive. Does not hallucinate provincial law details."
+    },
+
+    {
+      "id": "exact_001",
+      "question": "What does Appendix A of the TB Directive on Automated Decision-Making specify?",
+      "expected_answer": "VERIFY THIS ANSWER AGAINST YOUR ACTUAL TB DIRECTIVE DOCUMENT. Appendix A of the Treasury Board Directive on Automated Decision-Making specifies the impact level criteria and associated requirements matrix. It defines the four impact levels (I through IV) and for each level lists the mandatory requirements including AIA completion, human review obligations, explanation requirements, peer review requirements, and approval authority.",
+      "source_document": "tb_directive_adm",
+      "relevant_sections": ["Appendix A"],
+      "category": "exact_clause",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Tests BM25 exact clause retrieval. 'Appendix A' should be a keyword match."
+    },
+
+    {
+      "id": "exact_002",
+      "question": "What does Schedule 1 of PIPEDA contain?",
+      "expected_answer": "Schedule 1 of PIPEDA contains the ten fair information principles that form the foundation of Canada's private sector privacy law: Accountability, Identifying Purposes, Consent, Limiting Collection, Limiting Use Disclosure and Retention, Accuracy, Safeguards, Openness, Individual Access, and Challenging Compliance. These principles are derived from the CSA Model Code for the Protection of Personal Information and are legally binding under PIPEDA.",
+      "source_document": "pipeda",
+      "relevant_sections": ["Schedule 1"],
+      "category": "exact_clause",
+      "difficulty": "medium",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Tests exact clause retrieval. 'Schedule 1' should be keyword matchable."
+    },
+
+    {
+      "id": "exact_003",
+      "question": "What does the E-23 letter or backgrounder say about the purpose of the guideline?",
+      "expected_answer": "VERIFY THIS ANSWER AGAINST YOUR ACTUAL E-23 LETTER DOCUMENT. The OSFI E-23 letter and backgrounder explains that the guideline was developed to provide FRFIs with clear expectations for model risk management as models — including AI and ML models — become increasingly material to financial institutions' decision-making. It notes that E-23 updates and replaces earlier OSFI guidance on model risk and aligns with international best practices.",
+      "source_document": "osfi_e23_letter",
+      "relevant_sections": ["Letter body"],
+      "category": "exact_clause",
+      "difficulty": "hard",
+      "retrieval_note": "plain_english",
+      "expected_behavior": "Tests retrieval from the E-23 letter document specifically, not the main guideline."
+    }
+  ]
+}
