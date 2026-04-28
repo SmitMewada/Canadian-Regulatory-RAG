@@ -86,7 +86,7 @@ def generate_node(state: GraphState) -> GraphState:
     ) if trace_id else None
 
     # Instructor wraps the response — get raw completion for token counts
-    raw_response, answer = client.chat.completions.create_with_completion(
+    answer, raw_response = client.chat.completions.create_with_completion(
         model=os.getenv("LITELLM_MODEL", "grok-4-fast"),
         messages=[{"role": "user", "content": prompt}],
         response_model=RegulatoryAnswer,

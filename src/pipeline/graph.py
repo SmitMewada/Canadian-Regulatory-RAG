@@ -10,7 +10,7 @@ from src.pipeline.nodes.inline_eval import inline_eval_node
 from src.pipeline.nodes.citation_check import citation_check_node
 from src.pipeline.cache import get_cached_response, store_cached_response
 import uuid
-from langfuse import CallbackHandler
+from langfuse.callback import CallbackHandler
 from langfuse import Langfuse
 
 
@@ -143,7 +143,6 @@ def run_pipeline(query: str, document_filter: str = None) -> dict:
         public_key=os.environ["LANGFUSE_PUBLIC_KEY"],
         secret_key=os.environ["LANGFUSE_SECRET_KEY"],
         host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
-        trace_id=trace.id,          # links callbacks to our trace
         session_id=session_id,
     )
 
