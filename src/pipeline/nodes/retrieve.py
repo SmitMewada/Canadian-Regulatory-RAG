@@ -5,6 +5,7 @@ import psycopg2.extras
 
 from sentence_transformers import SentenceTransformer
 from src.models.schemas import GraphState, RetrievedChunk
+from langfuse import Langfuse
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -16,6 +17,12 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
 RETRIEVAL_TOP_K = int(os.getenv("RETRIEVAL_TOP_K", "10"))
 
 embedder = SentenceTransformer(EMBEDDING_MODEL)
+
+_langfuse = Langfuse(
+    public_key=os.environ["LANGFUSE_PUBLIC_KEY"],
+    secret_key=os.environ["LANGFUSE_SECRET_KEY"],
+    host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
+)
 
 def get_db_connection():
     return psycopg2.connect(os.getenv("DATABASE_URL"))
@@ -77,6 +84,14 @@ def retrieve_node(state: GraphState) -> GraphState:
     print(f"[retrieve] RETRIEVAL_TOP_K = {RETRIEVAL_TOP_K}")
     print(f"[retrieve] vec_dim = {len(query_vec)}, first 3 = {query_vec[:3]}")
     
+    trace_id = state.get("langfuse_trace_id")
+    span = _langfuse.span(
+        trace_id=trace_id,
+        name="hybrid_retrieve",
+        input={"query": query, "document_filter": document_filter},
+    ) if trace_id else None
+
+    
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -101,5 +116,26 @@ def retrieve_node(state: GraphState) -> GraphState:
         )
         for row, rrf_score in fused
     ]
+    
+    if span:
+        top_rrf = chunks[0].score if chunks else 0.0
+        span.end(
+            output={"chunks_retrieved": len(chunks), "top_rrf_score": round(top_rrf, 4)},
+            metadata={
+                "vector_hits": len(vector_rows),
+                "bm25_hits": len(bm25_rows),
+                "document_filter": document_filter,
+            },
+        )
+        _langfuse.score(
+            trace_id=trace_id,
+            name="chunks_retrieved",
+            value=len(chunks),
+        )
+        _langfuse.score(
+            trace_id=trace_id,
+            name="top_rrf_score",
+            value=round(top_rrf, 4),
+        )
 
     return {**state, "retrieved_chunks": chunks}

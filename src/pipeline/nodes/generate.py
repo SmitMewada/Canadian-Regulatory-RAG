@@ -2,9 +2,9 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from litellm import query
 from openai import OpenAI
 import instructor
+from langfuse import Langfuse  # NEW
 from src.models.schemas import GraphState, RegulatoryAnswer
 
 load_dotenv()
@@ -12,12 +12,18 @@ load_dotenv()
 PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "generate.txt"
 GENERATE_PROMPT = PROMPT_PATH.read_text()
 
-# Patch OpenAI client with Instructor for structured output
 client = instructor.from_openai(
     OpenAI(
         api_key=os.getenv("GROQ_API_KEY"),
         base_url="https://api.x.ai/v1",
     )
+)
+
+# NEW
+_langfuse = Langfuse(
+    public_key=os.environ["LANGFUSE_PUBLIC_KEY"],
+    secret_key=os.environ["LANGFUSE_SECRET_KEY"],
+    host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
 )
 
 DISCLAIMER_TRIGGERS = {
@@ -50,15 +56,9 @@ def maybe_add_disclaimer(query: str, answer: RegulatoryAnswer) -> RegulatoryAnsw
     return answer
 
 def generate_node(state: GraphState) -> GraphState:
-    """
-    Generates a structured answer from reranked chunks.
-    Uses Instructor + Pydantic to enforce output schema.
-    Temperature=0 for compliance — no creativity, only grounded answers.
-    """
     query = state["original_query"]
     chunks = state["reranked_chunks"]
 
-    # Fall back to retrieved if rerank was skipped
     if not chunks:
         chunks = state["retrieved_chunks"]
 
@@ -77,15 +77,23 @@ def generate_node(state: GraphState) -> GraphState:
     print(f"  [generate] query='{query[:60]}...'")
     print(f"  [generate] context chunks={len(chunks)}")
 
-    answer = client.chat.completions.create(
-    model=os.getenv("LITELLM_MODEL", "grok-4-fast"),
-    messages=[{"role": "user", "content": prompt}],
-    response_model=RegulatoryAnswer,
-    temperature=0,
-    max_tokens=1000,
-)
+    # NEW — span wraps the LLM call to capture latency + token counts
+    trace_id = state.get("langfuse_trace_id")
+    span = _langfuse.span(
+        trace_id=trace_id,
+        name="generate",
+        input={"query": query, "context_chunks": len(chunks)},
+    ) if trace_id else None
 
-# Reset — Python controls disclaimer, not the LLM
+    # Instructor wraps the response — get raw completion for token counts
+    raw_response, answer = client.chat.completions.create_with_completion(
+        model=os.getenv("LITELLM_MODEL", "grok-4-fast"),
+        messages=[{"role": "user", "content": prompt}],
+        response_model=RegulatoryAnswer,
+        temperature=0,
+        max_tokens=1000,
+    )
+
     answer.disclaimer = None
     answer.requires_human_review = False
     answer = maybe_add_disclaimer(query, answer)
@@ -93,5 +101,25 @@ def generate_node(state: GraphState) -> GraphState:
     print(f"  [generate] confidence={answer.confidence}")
     print(f"  [generate] cited_sources={answer.cited_sources}")
     print(f"  [generate] disclaimer={'yes' if answer.disclaimer else 'no'}")
+
+    # NEW — log token counts and output, close span
+    if span:
+        usage = raw_response.usage
+        span.end(
+            output={
+                "confidence": answer.confidence,
+                "cited_sources": answer.cited_sources,
+                "disclaimer_triggered": answer.disclaimer is not None,
+            },
+            metadata={
+                "prompt_tokens": usage.prompt_tokens if usage else None,
+                "completion_tokens": usage.completion_tokens if usage else None,
+                "total_tokens": usage.total_tokens if usage else None,
+                "model": os.getenv("LITELLM_MODEL", "grok-4-fast"),
+            },
+        )
+        if usage:
+            _langfuse.score(trace_id=trace_id, name="prompt_tokens", value=usage.prompt_tokens)
+            _langfuse.score(trace_id=trace_id, name="completion_tokens", value=usage.completion_tokens)
 
     return {**state, "generated_answer": answer}

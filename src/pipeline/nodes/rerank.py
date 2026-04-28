@@ -3,6 +3,7 @@ import os
 from sentence_transformers import CrossEncoder
 from dotenv import load_dotenv
 from src.models.schemas import GraphState, RetrievedChunk
+from langfuse import Langfuse
 
 load_dotenv()
 
@@ -11,6 +12,12 @@ RERANK_MODEL = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-base")
 
 # Load once at module level — expensive to reload per query
 reranker = CrossEncoder(RERANK_MODEL)
+
+_langfuse = Langfuse(
+    public_key=os.environ["LANGFUSE_PUBLIC_KEY"],
+    secret_key=os.environ["LANGFUSE_SECRET_KEY"],
+    host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
+)
 
 def rerank_node(state: GraphState) -> GraphState:
     """
@@ -25,6 +32,13 @@ def rerank_node(state: GraphState) -> GraphState:
     if not chunks:
         print("  [rerank] no chunks to rerank")
         return {**state, "reranked_chunks": []}
+    
+    trace_id = state.get("langfuse_trace_id")
+    span = _langfuse.span(
+        trace_id=trace_id,
+        name="rerank",
+        input={"query": query, "chunks_in": len(chunks)},
+    ) if trace_id else None
 
     # Cross-encoder scores query against each chunk together
     pairs = [(query, chunk.chunk_text) for chunk in chunks]
@@ -55,5 +69,20 @@ def rerank_node(state: GraphState) -> GraphState:
     print(f"  [rerank] top 3 after rerank:")
     for i, c in enumerate(reranked[:3]):
         print(f"    [{i+1}] doc={c.document_id} rerank={c.rerank_score:.4f} rrf={c.score:.4f}")
+
+    if span:
+        top_score = reranked[0].rerank_score if reranked else 0.0
+        bottom_score = reranked[-1].rerank_score if reranked else 0.0
+        span.end(
+            output={"chunks_out": len(reranked), "top_rerank_score": round(top_score, 4)},
+            metadata={
+                "bottom_rerank_score": round(bottom_score, 4),
+                "score_spread": round(top_score - bottom_score, 4),
+                "chunks_in": len(chunks),
+                "chunks_out": len(reranked),
+            },
+        )
+        _langfuse.score(trace_id=trace_id, name="rerank_top_score", value=round(top_score, 4))
+        _langfuse.score(trace_id=trace_id, name="rerank_score_spread", value=round(top_score - bottom_score, 4))
 
     return {**state, "reranked_chunks": reranked}
