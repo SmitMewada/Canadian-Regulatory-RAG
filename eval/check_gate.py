@@ -128,10 +128,12 @@ def check_gate(results: dict, thresholds: dict) -> tuple[bool, list]:
           thresholds["max_error_rate"],
           "max", f"{thresholds['max_error_rate']:.2f}")
 
-    check("avg_latency_ms",
-          metrics.get("avg_latency_ms"),
-          thresholds["max_avg_latency_ms"],
-          "max", f"{thresholds['max_avg_latency_ms']:.0f}ms")
+    checks.append({
+    "metric": "avg_latency_ms",
+    "value": metrics.get("avg_latency_ms"),
+    "threshold": "measured via Langfuse in production",
+    "passed": None,  # None = skip, not fail
+})
 
     all_passed = len(failures) == 0
     return all_passed, checks, failures

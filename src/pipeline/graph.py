@@ -10,8 +10,14 @@ from src.pipeline.nodes.inline_eval import inline_eval_node
 from src.pipeline.nodes.citation_check import citation_check_node
 from src.pipeline.cache import get_cached_response, store_cached_response
 import uuid
-from langfuse.callback import CallbackHandler
-from langfuse import Langfuse
+try:
+    from langfuse.callback import CallbackHandler
+    from langfuse import Langfuse
+    _langfuse_available = True
+except ImportError:
+    _langfuse_available = False
+    CallbackHandler = None
+    Langfuse = None
 
 
 load_dotenv()
@@ -21,7 +27,7 @@ _langfuse_client = None
 _langfuse_pub = os.environ.get("LANGFUSE_PUBLIC_KEY")
 _langfuse_sec = os.environ.get("LANGFUSE_SECRET_KEY")
  
-if _langfuse_pub and _langfuse_sec:
+if _langfuse_pub and _langfuse_sec and _langfuse_available:
     _langfuse_client = Langfuse(
         public_key=_langfuse_pub,
         secret_key=_langfuse_sec,
@@ -103,7 +109,7 @@ def build_graph() -> StateGraph:
 pipeline = build_graph()
 
 
-def run_pipeline_patched(query: str, document_filter: str = None) -> dict:
+def run_pipeline(query: str, document_filter: str = None) -> dict:
     """
     Patched version of run_pipeline with optional Langfuse tracing.
     Paste this over your existing run_pipeline() in graph.py.

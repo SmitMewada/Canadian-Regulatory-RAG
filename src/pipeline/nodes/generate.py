@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 import instructor
-from langfuse import Langfuse  # NEW
+from langfuse import Langfuse
 from src.models.schemas import GraphState, RegulatoryAnswer
 
 load_dotenv()
@@ -14,24 +14,63 @@ GENERATE_PROMPT = PROMPT_PATH.read_text()
 
 client = instructor.from_openai(
     OpenAI(
-        api_key=os.getenv("GROQ_API_KEY"),
+        api_key=os.getenv("XAI_API_KEY"),
         base_url="https://api.x.ai/v1",
     )
 )
 
-# NEW
-_langfuse = Langfuse(
-    public_key=os.environ["LANGFUSE_PUBLIC_KEY"],
-    secret_key=os.environ["LANGFUSE_SECRET_KEY"],
-    host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
-)
+# Optional Langfuse — disabled gracefully when env vars not present
+# (eval runner and CI run without Langfuse)
+_langfuse = None
+if os.environ.get("LANGFUSE_PUBLIC_KEY") and os.environ.get("LANGFUSE_SECRET_KEY"):
+    _langfuse = Langfuse(
+        public_key=os.environ["LANGFUSE_PUBLIC_KEY"],
+        secret_key=os.environ["LANGFUSE_SECRET_KEY"],
+        host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
+    )
 
+# Disclaimer trigger words — if any appear in the query, add financial advice disclaimer.
+# Rule: cast a wide net. Better to over-trigger than miss a guardrail case.
+# Original query (not rewritten) is always checked — rewrite may remove trigger words.
 DISCLAIMER_TRIGGERS = {
-    "should i", "should we", "should our",
-    "do you recommend", "what should",
-    "advise me", "advise us",
-    "is it worth", "should we invest",
+    # Direct advice requests
+    "should i",
+    "should we",
+    "should our",
+    "how should",
+    "what should",
+    # Recommendation language
+    "do you recommend",
+    "i recommend",
+    "would you recommend",
+    "recommend that",
+    # Best/optimal framing
+    "best way",
+    "best approach",
+    "best option",
+    "best practice",
+    "what is the best",
+    "what's the best",
+    # Financial action language
+    "invest",
+    "is it worth",
+    "should we invest",
+    "buy",
+    "sell",
+    # Advice/guidance requests
+    "advise me",
+    "advise us",
+    "give me advice",
+    "your advice",
+    # Good idea framing — catches "Is that a good idea?"
+    "good idea",
+    "is that a good",
+    "is this a good",
+    # Suggestion language
+    "suggest",
+    "would you suggest",
 }
+
 
 def build_context(chunks) -> str:
     parts = []
@@ -44,6 +83,7 @@ def build_context(chunks) -> str:
         )
     return "\n\n".join(parts)
 
+
 def maybe_add_disclaimer(query: str, answer: RegulatoryAnswer) -> RegulatoryAnswer:
     query_lower = query.lower()
     if any(trigger in query_lower for trigger in DISCLAIMER_TRIGGERS):
@@ -54,6 +94,7 @@ def maybe_add_disclaimer(query: str, answer: RegulatoryAnswer) -> RegulatoryAnsw
         )
         answer.requires_human_review = True
     return answer
+
 
 def generate_node(state: GraphState) -> GraphState:
     query = state["original_query"]
@@ -77,13 +118,14 @@ def generate_node(state: GraphState) -> GraphState:
     print(f"  [generate] query='{query[:60]}...'")
     print(f"  [generate] context chunks={len(chunks)}")
 
-    # NEW — span wraps the LLM call to capture latency + token counts
+    # Span wraps the LLM call to capture latency + token counts
+    # Only created when Langfuse is configured AND trace_id is available
     trace_id = state.get("langfuse_trace_id")
     span = _langfuse.span(
         trace_id=trace_id,
         name="generate",
         input={"query": query, "context_chunks": len(chunks)},
-    ) if trace_id else None
+    ) if (trace_id and _langfuse) else None
 
     # Instructor wraps the response — get raw completion for token counts
     answer, raw_response = client.chat.completions.create_with_completion(
@@ -94,6 +136,8 @@ def generate_node(state: GraphState) -> GraphState:
         max_tokens=1000,
     )
 
+    # Reset any disclaimer the LLM may have set directly through Instructor
+    # Disclaimer is controlled deterministically by Python, not by the LLM
     answer.disclaimer = None
     answer.requires_human_review = False
     answer = maybe_add_disclaimer(query, answer)
@@ -102,7 +146,7 @@ def generate_node(state: GraphState) -> GraphState:
     print(f"  [generate] cited_sources={answer.cited_sources}")
     print(f"  [generate] disclaimer={'yes' if answer.disclaimer else 'no'}")
 
-    # NEW — log token counts and output, close span
+    # Log token counts and output, close span
     if span:
         usage = raw_response.usage
         span.end(
@@ -118,7 +162,7 @@ def generate_node(state: GraphState) -> GraphState:
                 "model": os.getenv("LITELLM_MODEL", "grok-4-fast"),
             },
         )
-        if usage:
+        if usage and _langfuse:
             _langfuse.score(trace_id=trace_id, name="prompt_tokens", value=usage.prompt_tokens)
             _langfuse.score(trace_id=trace_id, name="completion_tokens", value=usage.completion_tokens)
 
