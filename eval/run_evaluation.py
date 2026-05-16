@@ -71,7 +71,7 @@ def _build_ragas_judge():
     print("[judge] Using OpenAI gpt-4o-mini as RAGAS judge (independent from pipeline)")
 
     openai_client = OpenAI(api_key=openai_key)
-    llm = llm_factory("gpt-4o-mini", client=openai_client)
+    llm = llm_factory("gpt-4o-mini", client=openai_client, max_tokens=4096,)
 
     return llm
 
@@ -515,6 +515,7 @@ def compute_deepeval_metrics(test_cases: list, answers: list) -> dict:
             input=tc["question"],
             actual_output=ans["answer"],
             expected_output=tc["expected_answer"],
+            context=contexts,
             retrieval_context=contexts,
         ))
         eligible_ids.append(tc["id"])
@@ -529,7 +530,6 @@ def compute_deepeval_metrics(test_cases: list, answers: list) -> dict:
     results = deepeval_evaluate(
         test_cases=test_case_objects,
         metrics=[hallucination_metric],
-        print_results=False,
     )
 
     scores = []
