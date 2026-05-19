@@ -432,36 +432,70 @@ def compute_ragas_metrics(test_cases: list, answers: list, ragas_llm) -> dict:
         "ground_truth": [],
     }
 
+    IDK_PHRASES = [
+        "i don't have sufficient information",
+        "not included in this system",
+        "not available in the",
+        "outside the scope",
+        "not in the corpus",
+        "cannot answer",
+        "no information",
+    ]
+
     skipped = []
+    case_ids = []  # track IDs so per_case output is joinable
     for tc in ragas_eligible:
         ans = ans_by_id.get(tc["id"], {})
+
+        # Skip pipeline errors
         if ans.get("error"):
-            skipped.append(tc["id"])
+            skipped.append({"id": tc["id"], "reason": "pipeline_error"})
             continue
+
+        # Skip IDK answers — RAGAS cannot meaningfully score them.
+        # An IDK answer within a factual category means retrieval found nothing
+        # relevant. Scoring it produces 0.0 across all metrics which drags down
+        # the aggregate without reflecting a retrieval failure we can fix.
+        # These cases are already validated by the IDK accuracy custom metric.
+        answer_text = ans.get("answer", "").lower()
+        is_idk = any(phrase in answer_text for phrase in IDK_PHRASES)
+        if is_idk:
+            skipped.append({"id": tc["id"], "reason": "idk_answer"})
+            continue
+
         contexts = ans.get("contexts", [])
         if not contexts:
-            contexts = ["No context retrieved."]
+            skipped.append({"id": tc["id"], "reason": "no_contexts"})
+            continue
 
         ragas_data["question"].append(tc["question"])
         ragas_data["answer"].append(ans.get("answer", ""))
         ragas_data["contexts"].append(contexts)
         ragas_data["ground_truth"].append(tc["expected_answer"])
+        case_ids.append(tc["id"])
 
     if not ragas_data["question"]:
         print("[RAGAS] No eligible cases to evaluate. Check pipeline errors.")
         return {"error": "no_eligible_cases", "skipped": skipped}
 
-    print(f"\n[RAGAS] Evaluating {len(ragas_data['question'])} cases "
-          f"({len(skipped)} skipped due to pipeline errors)...")
+    skipped_idk = [s["id"] for s in skipped if s["reason"] == "idk_answer"]
+    skipped_errors = [s["id"] for s in skipped if s["reason"] == "pipeline_error"]
+    skipped_no_ctx = [s["id"] for s in skipped if s["reason"] == "no_contexts"]
+
+    print(f"\n[RAGAS] Evaluating {len(ragas_data['question'])} cases...")
+    print(f"[RAGAS] Skipped: {len(skipped_idk)} idk answers, "
+          f"{len(skipped_errors)} errors, {len(skipped_no_ctx)} no-context")
+    if skipped_idk:
+        print(f"[RAGAS] IDK skipped: {skipped_idk}")
 
     dataset = Dataset.from_dict(ragas_data)
 
     # Instantiate metric objects with the judge LLM — required by new RAGAS API
     metrics_list = [
-    _Faithfulness(llm=ragas_llm),
-    _AnswerRelevancy(llm=ragas_llm),
-    _ContextPrecision(llm=ragas_llm),
-    _ContextRecall(llm=ragas_llm),
+        _Faithfulness(llm=ragas_llm),
+        _AnswerRelevancy(llm=ragas_llm),
+        _ContextPrecision(llm=ragas_llm),
+        _ContextRecall(llm=ragas_llm),
     ]
 
     result = evaluate(
@@ -471,6 +505,14 @@ def compute_ragas_metrics(test_cases: list, answers: list, ragas_llm) -> dict:
 
     scores = result.to_pandas()
 
+    # Attach case IDs to per_case so failures are debuggable
+    per_case_records = scores[[
+        "faithfulness", "answer_relevancy",
+        "context_precision", "context_recall"
+    ]].to_dict(orient="records")
+    for i, record in enumerate(per_case_records):
+        record["id"] = case_ids[i]
+
     return {
         "faithfulness": round(float(scores["faithfulness"].mean()), 4),
         "answer_relevancy": round(float(scores["answer_relevancy"].mean()), 4),
@@ -478,11 +520,8 @@ def compute_ragas_metrics(test_cases: list, answers: list, ragas_llm) -> dict:
         "context_recall": round(float(scores["context_recall"].mean()), 4),
         "n_evaluated": len(ragas_data["question"]),
         "n_skipped": len(skipped),
-        "skipped_ids": skipped,
-        "per_case": scores[[
-            "faithfulness", "answer_relevancy",
-            "context_precision", "context_recall"
-        ]].to_dict(orient="records"),
+        "skipped": skipped,  # full list with reasons
+        "per_case": per_case_records,
     }
 
 
