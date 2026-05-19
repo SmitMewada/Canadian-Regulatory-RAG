@@ -30,7 +30,7 @@ def query_rewrite_node(state: GraphState) -> GraphState:
         return {**state, "rewritten_query": query}
 
     response = client.chat.completions.create(
-        model=os.getenv("LITELLM_MODEL", "grok-4-fast"),  # no xai/ prefix needed here
+        model=os.getenv("LITELLM_MODEL", "grok-4.3"),  # no xai/ prefix needed here
         messages=[
             {"role": "user", "content": REWRITE_PROMPT.format(query=query)}
         ],

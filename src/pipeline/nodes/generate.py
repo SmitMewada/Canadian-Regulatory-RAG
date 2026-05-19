@@ -160,7 +160,7 @@ def generate_node(state: GraphState) -> GraphState:
                 "prompt_tokens": usage.prompt_tokens if usage else None,
                 "completion_tokens": usage.completion_tokens if usage else None,
                 "total_tokens": usage.total_tokens if usage else None,
-                "model": os.getenv("LITELLM_MODEL", "grok-4.20-0309-non-reasoning"),
+                "model": os.getenv("LITELLM_MODEL", "grok-4.3"),
             },
         )
         if usage and _langfuse:

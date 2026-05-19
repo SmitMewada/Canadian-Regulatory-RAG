@@ -45,7 +45,7 @@ def inline_eval_node(state: GraphState) -> GraphState:
 
     try:
         response = client.chat.completions.create(
-            model=os.getenv("LITELLM_MODEL", "grok-4-fast"),
+            model=os.getenv("LITELLM_MODEL", "grok-4.3"),
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
             max_tokens=10,  # only needs a single digit
