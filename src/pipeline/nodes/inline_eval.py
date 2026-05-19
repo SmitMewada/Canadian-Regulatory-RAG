@@ -11,7 +11,7 @@ PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "inline_eval.txt"
 INLINE_EVAL_PROMPT = PROMPT_PATH.read_text()
 
 client = OpenAI(
-    api_key=os.getenv("GROQ_API_KEY"),
+    api_key=os.getenv("XAI_API_KEY"),
     base_url="https://api.x.ai/v1",
 )
 

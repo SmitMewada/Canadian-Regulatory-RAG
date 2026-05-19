@@ -16,7 +16,8 @@ client = instructor.from_openai(
     OpenAI(
         api_key=os.getenv("XAI_API_KEY"),
         base_url="https://api.x.ai/v1",
-    )
+    ),
+    mode=instructor.Mode.JSON
 )
 
 # Optional Langfuse — disabled gracefully when env vars not present
@@ -129,7 +130,7 @@ def generate_node(state: GraphState) -> GraphState:
 
     # Instructor wraps the response — get raw completion for token counts
     answer, raw_response = client.chat.completions.create_with_completion(
-        model=os.getenv("LITELLM_MODEL", "grok-4-fast"),
+        model=os.getenv("LITELLM_MODEL", "grok-4.20-0309-non-reasoning"),
         messages=[{"role": "user", "content": prompt}],
         response_model=RegulatoryAnswer,
         temperature=0,
@@ -159,7 +160,7 @@ def generate_node(state: GraphState) -> GraphState:
                 "prompt_tokens": usage.prompt_tokens if usage else None,
                 "completion_tokens": usage.completion_tokens if usage else None,
                 "total_tokens": usage.total_tokens if usage else None,
-                "model": os.getenv("LITELLM_MODEL", "grok-4-fast"),
+                "model": os.getenv("LITELLM_MODEL", "grok-4.20-0309-non-reasoning"),
             },
         )
         if usage and _langfuse:
