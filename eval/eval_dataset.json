@@ -199,16 +199,14 @@
       "retrieval_note": "plain_english"
     },
     {
-      "id": "tb_006",
-      "question": "What does Section 6.1 of the TB Directive on Automated Decision-Making require?",
-      "expected_answer": "VERIFY THIS ANSWER AGAINST YOUR ACTUAL TB DIRECTIVE DOCUMENT. Section 6.1 of the TB Directive on Automated Decision-Making sets out the requirements for completing an Algorithmic Impact Assessment before deploying an automated decision system, including the obligation to use the Government of Canada AIA tool and to act on the resulting impact level determination.",
-      "source_document": "tb_adm",
-      "relevant_sections": [
-        "Section 6.1"
-      ],
-      "category": "exact_clause",
-      "difficulty": "medium",
-      "retrieval_note": "plain_english"
+     "id": "tb_006",
+     "question": "What quality assurance requirements does Section 6.3 of the TB Directive on Automated Decision-Making impose?",
+     "expected_answer": "Section 6.3 of the TB Directive on Automated Decision-Making sets out quality assurance requirements including testing before deployment (6.3.1), ongoing monitoring (6.3.2), data governance (6.3.6), and employee training (6.3.9) for automated decision systems.",
+     "source_document": "tb_adm",
+     "relevant_sections": ["Section 6.3"],
+     "category": "exact_clause",
+     "difficulty": "medium",
+     "retrieval_note": "plain_english"
     },
     {
       "id": "pipeda_001",
