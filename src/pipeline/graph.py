@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from src.models.schemas import GraphState
 from src.pipeline.nodes.query_rewrite import query_rewrite_node
+from src.pipeline.nodes.generate import maybe_add_disclaimer
 from src.pipeline.nodes.retrieve import retrieve_node
 from src.pipeline.nodes.rerank import rerank_node
 from src.pipeline.nodes.generate import generate_node
@@ -118,6 +119,8 @@ def run_pipeline(query: str, document_filter: str = None) -> dict:
  
     # --- CACHE HIT PATH ---
     cached = get_cached_response(query)
+    cached = maybe_add_disclaimer(query, cached)
+    
     if cached:
         if _langfuse_client:
             trace = _langfuse_client.trace(
